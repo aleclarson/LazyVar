@@ -1,0 +1,10 @@
+{
+  "name": "lazy-var",
+  "version": "1.0.0",
+  "main": "./js/src/LazyVar",
+  "dependencies": {
+    "internalize": "aleclarson/internalize#1.0.0",
+    "named-function": "aleclarson/named-function#1.0.3",
+    "set-type": "aleclarson/set-type#1.0.0"
+  }
+}
