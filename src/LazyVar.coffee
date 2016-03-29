@@ -1,27 +1,74 @@
 
 NamedFunction = require "named-function"
-internalize = require "internalize"
-setType = require "set-type"
+ReactiveVar = require "reactive-var"
+Tracker = require "tracker"
+setType = require "setType"
 
-LazyVar = NamedFunction "LazyVar", (firstGet) ->
+module.exports =
+LazyVar = NamedFunction "LazyVar", (options) ->
+
+  if options instanceof Function
+    options = { initValue: options }
+
+  unless options?.constructor is Object
+    throw TypeError "LazyVar only accepts a Function or Object!"
+
+  { initValue, reactive } = options
+
+  # We don't want a Reaction to depend on the variables
+  # referenced in the lazy computation! We only want to
+  # depend on the ReactiveVar that holds the lazy result!
+  initValue = _makeNonReactive initValue if reactive
 
   self =
+    get: -> self._impl.get.call self, initValue, this
+    set: (newValue) -> self._impl.set.call self, newValue
 
-    # Initializes the value and replaces itself on the first call.
-    get: ->
-      self.get = -> self._value
-      self.set = (newValue) -> self._value = newValue
-      self._value = firstGet.call this
-
-    set: (newValue) ->
-      self.get = -> self._value
-      self.set = (newValue) -> self._value = newValue
-      self._value = newValue
-
-  internalize self,
-
-    _value: undefined
+  Object.defineProperty self, "_value",
+    value: if reactive then ReactiveVar() else undefined
+    writable: yes
+    enumerable: no
 
   setType self, LazyVar
 
-module.exports = LazyVar
+LazyVar::reset = ->
+  return if @_impl is @_initialImpl
+  @_value = if @_isReactive() then ReactiveVar() else undefined
+  delete @_impl
+  return
+
+LazyVar::_isReactive = ->
+  @_value?.constructor is ReactiveVar
+
+LazyVar::_initialImpl =
+  get: (initValue, scope) ->
+    isReactive = @_isReactive()
+    @_overrideImpl if isReactive then @_reactiveImpl else @_defaultImpl
+    initialValue = initValue.call scope
+    @set initialValue
+    return initialValue
+  set: (newValue) ->
+    @_overrideImpl if @_isReactive() then @_reactiveImpl else @_defaultImpl
+    @set newValue
+
+LazyVar::_defaultImpl =
+  get: -> @_value
+  set: (newValue) ->
+    @_value = newValue
+    return
+
+LazyVar::_reactiveImpl =
+  get: -> @_value.get()
+  set: (newValue) ->
+    @_value.set newValue
+
+LazyVar::_impl = LazyVar::_initialImpl
+
+LazyVar::_overrideImpl = (impl) ->
+  Object.defineProperty this, "_impl",
+    value: impl
+    enumerable: no
+    configurable: yes
+
+_makeNonReactive = (initValue) ->
+  return -> Tracker.nonreactive => initValue.call this
