@@ -1,5 +1,5 @@
 
-NamedFunction = require "named-function"
+NamedFunction = require "NamedFunction"
 ReactiveVar = require "reactive-var"
 Tracker = require "tracker"
 setType = require "setType"
@@ -31,8 +31,12 @@ LazyVar = NamedFunction "LazyVar", (options) ->
 
   setType self, LazyVar
 
+Object.defineProperty LazyVar.prototype, "hasValue",
+  get: -> @_impl isnt @_initialImpl
+  enumerable: yes
+
 LazyVar::reset = ->
-  return if @_impl is @_initialImpl
+  return unless @hasValue
   @_value = if @_isReactive() then ReactiveVar() else undefined
   delete @_impl
   return
