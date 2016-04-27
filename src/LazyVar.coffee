@@ -8,20 +8,23 @@ module.exports =
 LazyVar = NamedFunction "LazyVar", (options) ->
 
   if options instanceof Function
-    options = { initValue: options }
+    options = { createValue: options }
 
   unless options?.constructor is Object
     throw TypeError "LazyVar only accepts a Function or Object!"
 
-  { initValue, reactive } = options
+  { createValue, reactive } = options
 
   # We don't want a Reaction to depend on the variables
   # referenced in the lazy computation! We only want to
   # depend on the ReactiveVar that holds the lazy result!
-  initValue = _makeNonReactive initValue if reactive
+  createValue = _makeNonReactive createValue if reactive
+
+  unless createValue instanceof Function
+    throw Error "'createValue' must be a Function!"
 
   self =
-    get: -> self._impl.get.call self, initValue, this
+    get: -> self._impl.get.call self, createValue, this
     set: (newValue) -> self._impl.set.call self, newValue
 
   Object.defineProperty self, "_value",
@@ -45,12 +48,12 @@ LazyVar::_isReactive = ->
   @_value?.constructor is ReactiveVar
 
 LazyVar::_initialImpl =
-  get: (initValue, scope) ->
+  get: (createValue, scope) ->
     isReactive = @_isReactive()
     @_overrideImpl if isReactive then @_reactiveImpl else @_defaultImpl
-    initialValue = initValue.call scope
-    @set initialValue
-    return initialValue
+    newValue = createValue.call scope
+    @set newValue
+    return newValue
   set: (newValue) ->
     @_overrideImpl if @_isReactive() then @_reactiveImpl else @_defaultImpl
     @set newValue
@@ -74,5 +77,5 @@ LazyVar::_overrideImpl = (impl) ->
     enumerable: no
     configurable: yes
 
-_makeNonReactive = (initValue) ->
-  return -> Tracker.nonreactive => initValue.call this
+_makeNonReactive = (createValue) ->
+  return -> Tracker.nonreactive => createValue.call this
