@@ -1,0 +1,11 @@
+{
+  "name": "lazy-var",
+  "version": "1.0.0",
+  "main": "./js/src/LazyVar",
+  "dependencies": {
+    "NamedFunction": "aleclarson/NamedFunction#2.0.0",
+    "reactive-var": "aleclarson/reactive-var#1.0.6",
+    "setType": "aleclarson/setType#1.0.0",
+    "tracker": "aleclarson/tracker#1.0.8"
+  }
+}
