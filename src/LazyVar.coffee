@@ -1,81 +1,103 @@
 
-NamedFunction = require "NamedFunction"
+{ assert, isType } = require "type-utils"
+
 ReactiveVar = require "reactive-var"
 Tracker = require "tracker"
-setType = require "setType"
+Type = require "Type"
 
-module.exports =
-LazyVar = NamedFunction "LazyVar", (options) ->
+# TODO: Inject self into 'Property' class.
 
-  if options instanceof Function
-    options = { createValue: options }
+type = Type "LazyVar"
 
-  unless options?.constructor is Object
-    throw TypeError "LazyVar only accepts a Function or Object!"
+type.createArguments (args) ->
 
-  { createValue, reactive } = options
+  if args[0] instanceof Function
+    args[0] = createValue: args[0]
+
+  assert isType(args[0], Object),
+    reason: "LazyVar only accepts a Function or Object!"
 
   # We don't want a Reaction to depend on the variables
   # referenced in the lazy computation! We only want to
   # depend on the ReactiveVar that holds the lazy result!
-  createValue = _makeNonReactive createValue if reactive
+  wrapNonReactive args[0], "createValue" if args[0].reactive
 
-  unless createValue instanceof Function
-    throw Error "'createValue' must be a Function!"
+  return args
 
-  self =
-    get: -> self._impl.get.call self, createValue, this
-    set: (newValue) -> self._impl.set.call self, newValue
+type.optionTypes =
+  createValue: Function
+  reactive: Boolean.Maybe
 
-  Object.defineProperty self, "_value",
-    value: if reactive then ReactiveVar() else undefined
-    writable: yes
-    enumerable: no
+type.defineFrozenValues ({ createValue }) ->
 
-  setType self, LazyVar
+  self = this
 
-Object.defineProperty LazyVar.prototype, "hasValue",
-  get: -> @_impl isnt @_initialImpl
-  enumerable: yes
+  get: ->
+    self._get createValue, this
 
-LazyVar::reset = ->
-  return unless @hasValue
-  @_value = if @_isReactive() then ReactiveVar() else undefined
-  delete @_impl
-  return
-
-LazyVar::_isReactive = ->
-  @_value?.constructor is ReactiveVar
-
-LazyVar::_initialImpl =
-  get: (createValue, scope) ->
-    isReactive = @_isReactive()
-    @_overrideImpl if isReactive then @_reactiveImpl else @_defaultImpl
-    newValue = createValue.call scope
-    @set newValue
-    return newValue
   set: (newValue) ->
-    @_overrideImpl if @_isReactive() then @_reactiveImpl else @_defaultImpl
-    @set newValue
+    self._set newValue
 
-LazyVar::_defaultImpl =
-  get: -> @_value
-  set: (newValue) ->
-    @_value = newValue
+type.defineValues
+
+  _value: null
+
+  _reactive: (options) -> options.reactive
+
+  _get: -> @_firstGet
+
+  _set: -> @_firstSet
+
+type.initInstance ->
+  @_resetValue()
+
+type.defineProperties
+
+  hasValue: get: ->
+    @_get isnt @_firstGet
+
+type.defineMethods
+
+  reset: ->
+    return if @_get is @_firstGet
+    @_resetValue()
+    delete @_get
     return
 
-LazyVar::_reactiveImpl =
-  get: -> @_value.get()
-  set: (newValue) ->
+  _resetValue: ->
+    @_value = if @_reactive
+      ReactiveVar()
+    else undefined
+
+  _firstGet: (createValue, scope) ->
+    @_get = if @_reactive then @_reactiveGet else @_simpleGet
+    @_set = if @_reactive then @_reactiveSet else @_simpleSet
+    newValue = createValue.call scope
+    @_set newValue
+    return newValue
+
+  _simpleGet: ->
+    return @_value
+
+  _reactiveGet: ->
+    return @_value.get()
+
+  _firstSet: (newValue) ->
+    @_get = if @_reactive then @_reactiveGet else @_simpleGet
+    @_set = if @_reactive then @_reactiveSet else @_simpleSet
+    @_set newValue
+
+  _simpleSet: (newValue) ->
+    @_value = newValue
+
+  _reactiveSet: (newValue) ->
     @_value.set newValue
 
-LazyVar::_impl = LazyVar::_initialImpl
+module.exports = type.build()
 
-LazyVar::_overrideImpl = (impl) ->
-  Object.defineProperty this, "_impl",
-    value: impl
-    enumerable: no
-    configurable: yes
-
-_makeNonReactive = (createValue) ->
-  return -> Tracker.nonreactive => createValue.call this
+wrapNonReactive = (obj, key) ->
+  func = obj[key]
+  obj[key] = ->
+    scope = this
+    Tracker.nonreactive ->
+      func.call scope
