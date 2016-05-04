@@ -5,9 +5,11 @@ ReactiveVar = require "reactive-var"
 Tracker = require "tracker"
 Type = require "Type"
 
-# TODO: Inject self into 'Property' class.
-
 type = Type "LazyVar"
+
+type.optionTypes =
+  createValue: Function
+  reactive: Boolean.Maybe
 
 type.createArguments (args) ->
 
@@ -23,10 +25,6 @@ type.createArguments (args) ->
   wrapNonReactive args[0], "createValue" if args[0].reactive
 
   return args
-
-type.optionTypes =
-  createValue: Function
-  reactive: Boolean.Maybe
 
 type.defineFrozenValues ({ createValue }) ->
 
@@ -47,9 +45,6 @@ type.defineValues
   _get: -> @_firstGet
 
   _set: -> @_firstSet
-
-type.initInstance ->
-  @_resetValue()
 
 type.defineProperties
 
@@ -92,6 +87,13 @@ type.defineMethods
 
   _reactiveSet: (newValue) ->
     @_value.set newValue
+
+type.initInstance ->
+  @_resetValue()
+
+type.didBuild (type) ->
+  Property = require "Property"
+  Property.inject.LazyVar type
 
 module.exports = type.build()
 
