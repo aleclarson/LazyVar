@@ -1,8 +1,8 @@
 
-{ assert, isType } = require "type-utils"
-
 ReactiveVar = require "reactive-var"
 Tracker = require "tracker"
+isType = require "isType"
+assert = require "assert"
 Type = require "Type"
 
 type = Type "LazyVar"

@@ -1,10 +1,12 @@
-var ReactiveVar, Tracker, Type, assert, isType, ref, type, wrapNonReactive;
-
-ref = require("type-utils"), assert = ref.assert, isType = ref.isType;
+var ReactiveVar, Tracker, Type, assert, isType, type, wrapNonReactive;
 
 ReactiveVar = require("reactive-var");
 
 Tracker = require("tracker");
+
+isType = require("isType");
+
+assert = require("assert");
 
 Type = require("Type");
 
