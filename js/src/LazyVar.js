@@ -110,9 +110,9 @@ type.initInstance(function() {
 });
 
 type.didBuild(function(type) {
-  var Property;
-  Property = require("Property");
-  return Property.inject.LazyVar(type);
+  var inject;
+  inject = require("Property/inject");
+  return inject("LazyVar", type);
 });
 
 module.exports = type.build();

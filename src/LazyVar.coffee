@@ -92,8 +92,8 @@ type.initInstance ->
   @_resetValue()
 
 type.didBuild (type) ->
-  Property = require "Property"
-  Property.inject.LazyVar type
+  inject = require "Property/inject"
+  inject "LazyVar", type
 
 module.exports = type.build()
 
