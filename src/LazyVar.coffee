@@ -56,7 +56,8 @@ type.defineMethods
   reset: ->
     return if @_get is @_firstGet
     @_resetValue()
-    delete @_get
+    @_get = @_firstGet
+    @_set = @_firstSet
     return
 
   _resetValue: ->

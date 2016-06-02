@@ -73,7 +73,8 @@ type.defineMethods({
       return;
     }
     this._resetValue();
-    delete this._get;
+    this._get = this._firstGet;
+    this._set = this._firstSet;
   },
   _resetValue: function() {
     return this._value = this._reactive ? ReactiveVar() : void 0;
