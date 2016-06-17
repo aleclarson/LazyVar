@@ -1,116 +1,126 @@
-var LazyVar, NamedFunction, ReactiveVar, Tracker, _makeNonReactive, setType;
-
-NamedFunction = require("NamedFunction");
+var ReactiveVar, Tracker, Type, assert, isType, type, wrapNonReactive;
 
 ReactiveVar = require("reactive-var");
 
 Tracker = require("tracker");
 
-setType = require("setType");
+isType = require("isType");
 
-module.exports = LazyVar = NamedFunction("LazyVar", function(options) {
-  var createValue, reactive, self;
-  if (options instanceof Function) {
-    options = {
-      createValue: options
+assert = require("assert");
+
+Type = require("Type");
+
+type = Type("LazyVar");
+
+type.optionTypes = {
+  createValue: Function,
+  reactive: Boolean.Maybe
+};
+
+type.createArguments(function(args) {
+  if (args[0] instanceof Function) {
+    args[0] = {
+      createValue: args[0]
     };
   }
-  if ((options != null ? options.constructor : void 0) !== Object) {
-    throw TypeError("LazyVar only accepts a Function or Object!");
+  assert(isType(args[0], Object), {
+    reason: "LazyVar only accepts a Function or Object!"
+  });
+  if (args[0].reactive) {
+    wrapNonReactive(args[0], "createValue");
   }
-  createValue = options.createValue, reactive = options.reactive;
-  if (reactive) {
-    createValue = _makeNonReactive(createValue);
-  }
-  if (!(createValue instanceof Function)) {
-    throw Error("'createValue' must be a Function!");
-  }
-  self = {
+  return args;
+});
+
+type.defineFrozenValues(function(arg) {
+  var createValue, self;
+  createValue = arg.createValue;
+  self = this;
+  return {
     get: function() {
-      return self._impl.get.call(self, createValue, this);
+      return self._get(createValue, this);
     },
     set: function(newValue) {
-      return self._impl.set.call(self, newValue);
+      return self._set(newValue);
     }
   };
-  Object.defineProperty(self, "_value", {
-    value: reactive ? ReactiveVar() : void 0,
-    writable: true,
-    enumerable: false
-  });
-  return setType(self, LazyVar);
 });
 
-Object.defineProperty(LazyVar.prototype, "hasValue", {
-  get: function() {
-    return this._impl !== this._initialImpl;
+type.defineValues({
+  _value: null,
+  _reactive: function(options) {
+    return options.reactive;
   },
-  enumerable: true
+  _get: function() {
+    return this._firstGet;
+  },
+  _set: function() {
+    return this._firstSet;
+  }
 });
 
-LazyVar.prototype.reset = function() {
-  if (!this.hasValue) {
-    return;
+type.defineProperties({
+  hasValue: {
+    get: function() {
+      return this._get !== this._firstGet;
+    }
   }
-  this._value = this._isReactive() ? ReactiveVar() : void 0;
-  delete this._impl;
-};
+});
 
-LazyVar.prototype._isReactive = function() {
-  var ref;
-  return ((ref = this._value) != null ? ref.constructor : void 0) === ReactiveVar;
-};
-
-LazyVar.prototype._initialImpl = {
-  get: function(createValue, scope) {
-    var isReactive, newValue;
-    isReactive = this._isReactive();
-    this._overrideImpl(isReactive ? this._reactiveImpl : this._defaultImpl);
+type.defineMethods({
+  reset: function() {
+    if (this._get === this._firstGet) {
+      return;
+    }
+    this._resetValue();
+    this._get = this._firstGet;
+    this._set = this._firstSet;
+  },
+  _resetValue: function() {
+    return this._value = this._reactive ? ReactiveVar() : void 0;
+  },
+  _firstGet: function(createValue, scope) {
+    var newValue;
+    this._get = this._reactive ? this._reactiveGet : this._simpleGet;
+    this._set = this._reactive ? this._reactiveSet : this._simpleSet;
     newValue = createValue.call(scope);
-    this.set(newValue);
+    this._set(newValue);
     return newValue;
   },
-  set: function(newValue) {
-    this._overrideImpl(this._isReactive() ? this._reactiveImpl : this._defaultImpl);
-    return this.set(newValue);
-  }
-};
-
-LazyVar.prototype._defaultImpl = {
-  get: function() {
+  _simpleGet: function() {
     return this._value;
   },
-  set: function(newValue) {
-    this._value = newValue;
-  }
-};
-
-LazyVar.prototype._reactiveImpl = {
-  get: function() {
+  _reactiveGet: function() {
     return this._value.get();
   },
-  set: function(newValue) {
+  _firstSet: function(newValue) {
+    this._get = this._reactive ? this._reactiveGet : this._simpleGet;
+    this._set = this._reactive ? this._reactiveSet : this._simpleSet;
+    return this._set(newValue);
+  },
+  _simpleSet: function(newValue) {
+    return this._value = newValue;
+  },
+  _reactiveSet: function(newValue) {
     return this._value.set(newValue);
   }
-};
+});
 
-LazyVar.prototype._impl = LazyVar.prototype._initialImpl;
+type.initInstance(function() {
+  return this._resetValue();
+});
 
-LazyVar.prototype._overrideImpl = function(impl) {
-  return Object.defineProperty(this, "_impl", {
-    value: impl,
-    enumerable: false,
-    configurable: true
-  });
-};
+module.exports = type.build();
 
-_makeNonReactive = function(createValue) {
-  return function() {
-    return Tracker.nonreactive((function(_this) {
-      return function() {
-        return createValue.call(_this);
-      };
-    })(this));
+wrapNonReactive = function(obj, key) {
+  var func;
+  func = obj[key];
+  return obj[key] = function() {
+    var scope;
+    scope = this;
+    return Tracker.nonreactive(function() {
+      return func.call(scope);
+    });
   };
 };
 

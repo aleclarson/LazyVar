@@ -1,5 +1,5 @@
 
-# lazy-var v1.0.0
+# LazyVar 2.0.0 ![stable](https://img.shields.io/badge/stability-stable-4EBA0F.svg?style=flat)
 
 ```coffee
 LazyVar = require "lazy-var"
@@ -17,8 +17,4 @@ foo.set 2  # 2
 foo._value # 2
 ```
 
-## install
-
-```sh
-npm install aleclarson/lazy-var#1.0.0
-```
+**TODO:** Write tests?!
