@@ -110,12 +110,6 @@ type.initInstance(function() {
   return this._resetValue();
 });
 
-type.didBuild(function(type) {
-  var inject;
-  inject = require("Property/inject");
-  return inject("LazyVar", type);
-});
-
 module.exports = type.build();
 
 wrapNonReactive = function(obj, key) {

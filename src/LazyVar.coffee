@@ -92,10 +92,6 @@ type.defineMethods
 type.initInstance ->
   @_resetValue()
 
-type.didBuild (type) ->
-  inject = require "Property/inject"
-  inject "LazyVar", type
-
 module.exports = type.build()
 
 wrapNonReactive = (obj, key) ->

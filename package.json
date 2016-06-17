@@ -1,9 +1,8 @@
 {
-  "name": "lazy-var",
+  "name": "LazyVar",
   "version": "2.0.0",
   "main": "js/src/LazyVar",
   "dependencies": {
-    "Property": "aleclarson/Property#1.0.0",
     "Type": "aleclarson/Type#1.0.0",
     "assert": "aleclarson/assert#1.0.0",
     "isType": "aleclarson/isType#1.0.0",
