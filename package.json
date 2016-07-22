@@ -1,7 +1,7 @@
 {
   "name": "LazyVar",
   "version": "2.0.0",
-  "main": "js/src/LazyVar",
+  "main": "js/LazyVar",
   "dependencies": {
     "Type": "aleclarson/Type#1.0.0",
     "assert": "aleclarson/assert#1.0.0",
