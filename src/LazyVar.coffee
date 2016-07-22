@@ -1,5 +1,5 @@
 
-ReactiveVar = require "reactive-var"
+ReactiveVar = require "ReactiveVar"
 Tracker = require "tracker"
 isType = require "isType"
 assert = require "assert"
@@ -7,9 +7,9 @@ Type = require "Type"
 
 type = Type "LazyVar"
 
-type.optionTypes =
-  createValue: Function
-  reactive: Boolean.Maybe
+type.defineOptions
+  createValue: Function.isRequired
+  reactive: Boolean
 
 type.createArguments (args) ->
 
