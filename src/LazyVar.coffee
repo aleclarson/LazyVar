@@ -16,13 +16,12 @@ type.createArguments (args) ->
   if args[0] instanceof Function
     args[0] = createValue: args[0]
 
-  assert isType(args[0], Object),
-    reason: "LazyVar only accepts a Function or Object!"
+  assert isType(args[0], Object), "LazyVar only accepts a Function or Object!"
 
   # We don't want a Reaction to depend on the variables
   # referenced in the lazy computation! We only want to
   # depend on the ReactiveVar that holds the lazy result!
-  wrapNonReactive args[0], "createValue" if args[0].reactive
+  args[0].reactive and wrapNonReactive args[0], "createValue"
 
   return args
 
@@ -46,9 +45,9 @@ type.defineValues
 
   _set: -> @_firstSet
 
-type.defineProperties
+type.defineGetters
 
-  hasValue: get: ->
+  hasValue: ->
     @_get isnt @_firstGet
 
 type.defineMethods
@@ -59,6 +58,9 @@ type.defineMethods
     @_get = @_firstGet
     @_set = @_firstSet
     return
+
+  call: (arg1, arg2, arg3) ->
+    @get() arg1, arg2, arg3
 
   _resetValue: ->
     @_value = if @_reactive
