@@ -1,6 +1,6 @@
 var ReactiveVar, Tracker, Type, assert, isType, type, wrapNonReactive;
 
-ReactiveVar = require("reactive-var");
+ReactiveVar = require("ReactiveVar");
 
 Tracker = require("tracker");
 
@@ -12,10 +12,10 @@ Type = require("Type");
 
 type = Type("LazyVar");
 
-type.optionTypes = {
-  createValue: Function,
-  reactive: Boolean.Maybe
-};
+type.defineOptions({
+  createValue: Function.isRequired,
+  reactive: Boolean
+});
 
 type.createArguments(function(args) {
   if (args[0] instanceof Function) {
@@ -23,12 +23,8 @@ type.createArguments(function(args) {
       createValue: args[0]
     };
   }
-  assert(isType(args[0], Object), {
-    reason: "LazyVar only accepts a Function or Object!"
-  });
-  if (args[0].reactive) {
-    wrapNonReactive(args[0], "createValue");
-  }
+  assert(isType(args[0], Object), "LazyVar only accepts a Function or Object!");
+  args[0].reactive && wrapNonReactive(args[0], "createValue");
   return args;
 });
 
@@ -59,11 +55,9 @@ type.defineValues({
   }
 });
 
-type.defineProperties({
-  hasValue: {
-    get: function() {
-      return this._get !== this._firstGet;
-    }
+type.defineGetters({
+  hasValue: function() {
+    return this._get !== this._firstGet;
   }
 });
 
@@ -75,6 +69,9 @@ type.defineMethods({
     this._resetValue();
     this._get = this._firstGet;
     this._set = this._firstSet;
+  },
+  call: function(arg1, arg2, arg3) {
+    return this.get()(arg1, arg2, arg3);
   },
   _resetValue: function() {
     return this._value = this._reactive ? ReactiveVar() : void 0;
@@ -124,4 +121,4 @@ wrapNonReactive = function(obj, key) {
   };
 };
 
-//# sourceMappingURL=../../map/src/LazyVar.map
+//# sourceMappingURL=map/LazyVar.map

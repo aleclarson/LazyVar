@@ -1,12 +1,13 @@
 {
   "name": "LazyVar",
-  "version": "2.0.0",
-  "main": "js/src/LazyVar",
+  "version": "2.1.0",
+  "main": "js/index",
   "dependencies": {
-    "Type": "aleclarson/Type#1.0.0",
+    "Property": "aleclarson/Property#1.1.1",
+    "ReactiveVar": "aleclarson/ReactiveVar#2.0.0",
+    "Type": "aleclarson/Type#1.1.0",
     "assert": "aleclarson/assert#1.0.0",
     "isType": "aleclarson/isType#1.0.0",
-    "reactive-var": "aleclarson/reactive-var#2.0.0",
     "tracker": "aleclarson/tracker#2.0.0"
   },
   "lotus": {
