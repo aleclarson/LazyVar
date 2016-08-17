@@ -1,4 +1,4 @@
-var ReactiveVar, Tracker, Type, assert, isType, type, wrapNonReactive;
+var ReactiveVar, Tracker, Type, assert, isType, type;
 
 ReactiveVar = require("ReactiveVar");
 
@@ -12,47 +12,52 @@ Type = require("Type");
 
 type = Type("LazyVar");
 
+type.initArgs(function(args) {
+  if (isType(args[0], Function)) {
+    args[0] = {
+      createValue: args[0]
+    };
+  }
+});
+
 type.defineOptions({
   createValue: Function.isRequired,
   reactive: Boolean
 });
 
-type.createArguments(function(args) {
-  if (args[0] instanceof Function) {
-    args[0] = {
-      createValue: args[0]
-    };
-  }
-  assert(isType(args[0], Object), "LazyVar only accepts a Function or Object!");
-  args[0].reactive && wrapNonReactive(args[0], "createValue");
-  return args;
+type.initInstance(function(options) {
+  var createValue, reactive;
+  createValue = options.createValue, reactive = options.reactive;
+  reactive && (options.createValue = function() {
+    return Tracker.nonreactive(this, createValue);
+  });
 });
 
-type.defineFrozenValues(function(arg) {
-  var createValue, self;
-  createValue = arg.createValue;
-  self = this;
+type.defineFrozenValues(function(options) {
+  var createValue, lazy;
+  createValue = options.createValue;
+  lazy = this;
   return {
     get: function() {
-      return self._get(createValue, this);
+      return lazy._get(createValue, this);
     },
     set: function(newValue) {
-      return self._set(newValue);
+      return lazy._set(newValue);
     }
   };
 });
 
-type.defineValues({
-  _value: null,
-  _reactive: function(options) {
-    return options.reactive;
-  },
-  _get: function() {
-    return this._firstGet;
-  },
-  _set: function() {
-    return this._firstSet;
-  }
+type.defineValues(function(options) {
+  return {
+    _value: null,
+    _reactive: options.reactive,
+    _get: this._firstGet,
+    _set: this._firstSet
+  };
+});
+
+type.initInstance(function() {
+  return this._resetValue();
 });
 
 type.defineGetters({
@@ -74,7 +79,7 @@ type.defineMethods({
     return this.get()(arg1, arg2, arg3);
   },
   _resetValue: function() {
-    return this._value = this._reactive ? ReactiveVar() : void 0;
+    this._value = this._reactive ? ReactiveVar() : void 0;
   },
   _firstGet: function(createValue, scope) {
     var newValue;
@@ -103,22 +108,6 @@ type.defineMethods({
   }
 });
 
-type.initInstance(function() {
-  return this._resetValue();
-});
-
 module.exports = type.build();
-
-wrapNonReactive = function(obj, key) {
-  var func;
-  func = obj[key];
-  return obj[key] = function() {
-    var scope;
-    scope = this;
-    return Tracker.nonreactive(function() {
-      return func.call(scope);
-    });
-  };
-};
 
 //# sourceMappingURL=map/LazyVar.map
