@@ -2,7 +2,6 @@
 ReactiveVar = require "ReactiveVar"
 Tracker = require "tracker"
 isType = require "isType"
-assert = require "assert"
 Type = require "Type"
 
 type = Type "LazyVar"
@@ -17,18 +16,14 @@ type.defineOptions
   reactive: Boolean
 
 # Make 'createValue' non-reactive if '_value' is reactive.
-type.initInstance (options) ->
-  {createValue, reactive} = options
+type.initInstance ({createValue, reactive}) ->
   reactive and options.createValue = ->
     Tracker.nonreactive this, createValue
   return
 
-type.defineFrozenValues (options) ->
-  {createValue} = options
+type.defineFrozenValues ({createValue}) ->
   lazy = this
-
   get: -> lazy._get createValue, this
-
   set: (newValue) -> lazy._set newValue
 
 type.defineValues (options) ->
@@ -62,7 +57,8 @@ type.defineMethods
 
   _resetValue: ->
     @_value =
-      if @_reactive then ReactiveVar()
+      if @_reactive
+      then ReactiveVar()
       else undefined
     return
 
