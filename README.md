@@ -1,5 +1,5 @@
 
-# LazyVar v2.1.0 ![stable](https://img.shields.io/badge/stability-stable-4EBA0F.svg?style=flat)
+# LazyVar v2.1.1 ![stable](https://img.shields.io/badge/stability-stable-4EBA0F.svg?style=flat)
 
 ```coffee
 LazyVar = require "lazy-var"
