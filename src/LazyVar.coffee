@@ -21,12 +21,14 @@ type.defineArgs ->
     createValue: yes
 
 # Make 'createValue' non-reactive if '_value' is reactive.
-type.initInstance ({createValue, reactive}) ->
-  reactive and options.createValue = ->
-    Tracker.nonreactive this, createValue
+type.initInstance (options) ->
+  if options.reactive
+    createValue = options.createValue
+    options.createValue = ->
+      Tracker.nonreactive this, createValue
   return
 
-type.defineFrozenValues ({createValue}) ->
+type.defineFrozenValues ({ createValue }) ->
   lazy = this
   get: -> lazy._get createValue, this
   set: (newValue) -> lazy._set newValue
