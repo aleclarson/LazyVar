@@ -6,14 +6,19 @@ Type = require "Type"
 
 type = Type "LazyVar"
 
-type.initArgs (args) ->
-  if isType args[0], Function
-    args[0] = createValue: args[0]
-  return
+type.defineArgs ->
 
-type.defineOptions
-  createValue: Function.isRequired
-  reactive: Boolean
+  create: (args) ->
+    if isType args[0], Function
+      args[0] = createValue: args[0]
+    return args
+
+  types:
+    createValue: Function
+    reactive: Boolean
+
+  required:
+    createValue: yes
 
 # Make 'createValue' non-reactive if '_value' is reactive.
 type.initInstance ({createValue, reactive}) ->
