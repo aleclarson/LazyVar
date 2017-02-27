@@ -2,53 +2,46 @@
 ReactiveVar = require "ReactiveVar"
 Tracker = require "tracker"
 isType = require "isType"
-assert = require "assert"
 Type = require "Type"
 
 type = Type "LazyVar"
+
+type.initArgs (args) ->
+  if isType args[0], Function
+    args[0] = createValue: args[0]
+  return
 
 type.defineOptions
   createValue: Function.isRequired
   reactive: Boolean
 
-type.createArguments (args) ->
+# Make 'createValue' non-reactive if '_value' is reactive.
+type.initInstance ({createValue, reactive}) ->
+  reactive and options.createValue = ->
+    Tracker.nonreactive this, createValue
+  return
 
-  if args[0] instanceof Function
-    args[0] = createValue: args[0]
+type.defineFrozenValues ({createValue}) ->
+  lazy = this
+  get: -> lazy._get createValue, this
+  set: (newValue) -> lazy._set newValue
 
-  assert isType(args[0], Object), "LazyVar only accepts a Function or Object!"
-
-  # We don't want a Reaction to depend on the variables
-  # referenced in the lazy computation! We only want to
-  # depend on the ReactiveVar that holds the lazy result!
-  args[0].reactive and wrapNonReactive args[0], "createValue"
-
-  return args
-
-type.defineFrozenValues ({ createValue }) ->
-
-  self = this
-
-  get: ->
-    self._get createValue, this
-
-  set: (newValue) ->
-    self._set newValue
-
-type.defineValues
+type.defineValues (options) ->
 
   _value: null
 
-  _reactive: (options) -> options.reactive
+  _reactive: options.reactive
 
-  _get: -> @_firstGet
+  _get: @_firstGet
 
-  _set: -> @_firstSet
+  _set: @_firstSet
+
+type.initInstance ->
+  @_resetValue()
 
 type.defineGetters
 
-  hasValue: ->
-    @_get isnt @_firstGet
+  hasValue: -> @_get isnt @_firstGet
 
 type.defineMethods
 
@@ -63,9 +56,11 @@ type.defineMethods
     @get() arg1, arg2, arg3
 
   _resetValue: ->
-    @_value = if @_reactive
-      ReactiveVar()
-    else undefined
+    @_value =
+      if @_reactive
+      then ReactiveVar()
+      else undefined
+    return
 
   _firstGet: (createValue, scope) ->
     @_get = if @_reactive then @_reactiveGet else @_simpleGet
@@ -91,14 +86,4 @@ type.defineMethods
   _reactiveSet: (newValue) ->
     @_value.set newValue
 
-type.initInstance ->
-  @_resetValue()
-
 module.exports = type.build()
-
-wrapNonReactive = (obj, key) ->
-  func = obj[key]
-  obj[key] = ->
-    scope = this
-    Tracker.nonreactive ->
-      func.call scope
