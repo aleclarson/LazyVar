@@ -1,6 +1,6 @@
 {
   "name": "LazyVar",
-  "version": "2.2.0",
+  "version": "2.2.1",
   "main": "js/index",
   "plugins": [
     "lotus-coffee"
@@ -10,10 +10,10 @@
     "postinstall": "npm run build"
   },
   "dependencies": {
-    "Property": "aleclarson/Property#1.2.3",
-    "ReactiveVar": "aleclarson/ReactiveVar#2.2.0",
-    "Type": "aleclarson/Type#2.3.1",
-    "isType": "aleclarson/isType#1.0.1",
-    "tracker": "aleclarson/tracker#2.2.0"
+    "Property": "aleclarson/Property#1.2.4",
+    "ReactiveVar": "aleclarson/ReactiveVar#2.2.1",
+    "Type": "aleclarson/Type#2.4.0",
+    "isType": "aleclarson/isType#1.0.2",
+    "tracker": "aleclarson/tracker#2.2.1"
   }
 }
