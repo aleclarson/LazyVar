@@ -6,19 +6,19 @@ Type = require "Type"
 
 type = Type "LazyVar"
 
+type.createArgs (args) ->
+  if isType args[0], Function
+    args[0] = createValue: args[0]
+  return args
+
 type.defineArgs ->
 
-  create: (args) ->
-    if isType args[0], Function
-      args[0] = createValue: args[0]
-    return args
+  required:
+    createValue: yes
 
   types:
     createValue: Function
     reactive: Boolean
-
-  required:
-    createValue: yes
 
 # Make 'createValue' non-reactive if '_value' is reactive.
 type.initInstance (options) ->
@@ -32,19 +32,6 @@ type.defineFrozenValues ({ createValue }) ->
   lazy = this
   get: -> lazy._get createValue, this
   set: (newValue) -> lazy._set newValue
-
-type.defineValues (options) ->
-
-  _value: null
-
-  _reactive: options.reactive
-
-  _get: @_firstGet
-
-  _set: @_firstSet
-
-type.initInstance ->
-  @_resetValue()
 
 type.defineGetters
 
@@ -61,6 +48,25 @@ type.defineMethods
 
   call: (arg1, arg2, arg3) ->
     @get() arg1, arg2, arg3
+
+#
+# Internal
+#
+
+type.defineValues (options) ->
+
+  _value: null
+
+  _reactive: options.reactive
+
+  _get: @_firstGet
+
+  _set: @_firstSet
+
+type.initInstance ->
+  @_resetValue()
+
+type.defineMethods
 
   _resetValue: ->
     @_value =
